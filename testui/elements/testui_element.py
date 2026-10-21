@@ -444,18 +444,19 @@ class Elements:
         err = None
         value = ""
         err_text, info_text = "should have been", "="
-        if self.__is_not:
+        is_not = self.__is_not
+        self.__is_not = False
+        if is_not:
             err_text, info_text = "should not have been", "!="
         while time.time() < start + seconds:
             try:
                 value = self.get_element().get_attribute(attr)
-                if (value == text) != self.__is_not:
+                if (value == text) != is_not:
                     self.__put_log(
                         f'{self.device_name}: element "{self.locator_type}: '
                         f'{self.locator}" has attribute "{attr}" -> "{value}" '
                         f'{info_text} "{text}" after {time.time() - start}s'
                     )
-                    self.__is_not = False
                     return self
             except Exception as error:
                 err = error
@@ -481,18 +482,19 @@ class Elements:
         err = None
         value = ""
         info_text, err_text = "containing", " not"
-        if self.__is_not:
+        is_not = self.__is_not
+        self.__is_not = False
+        if is_not:
             info_text, err_text = "not containing", " "
         while time.time() < start + seconds:
             try:
                 value = self.get_element().get_attribute(attr)
-                if (text in value) != self.__is_not:
+                if (text in value) != is_not:
                     self.__put_log(
                         f'element "{self.locator_type}: {self.locator}" has '
                         f'attribute "{attr}" {info_text} "{text}" after '
                         f"{time.time() - start}s"
                     )
-                    self.__is_not = False
                     return self
             except Exception as error:
                 err = error
@@ -521,19 +523,20 @@ class Elements:
         err = None
         value = ""
         info_text, err_text = "contains", "not"
-        if self.__is_not:
+        is_not = self.__is_not
+        self.__is_not = False
+        if is_not:
             info_text, err_text = "not contains", "is"
         while time.time() < start + seconds:
             try:
                 value = self.get_element().get_attribute(attr)
-                if (text.lower() in value.lower()) != self.__is_not:
+                if (text.lower() in value.lower()) != is_not:
                     self.__put_log(
                         f'{self.device_name}: element "{self.locator_type}: '
                         f'{self.locator}" has attribute "{attr}" -> "{value}" '
                         f'{info_text} no case sensitive value "{text}" after '
                         f"{time.time() - start}s"
                     )
-                    self.__is_not = False
                     return self
             except Exception as error:
                 err = error

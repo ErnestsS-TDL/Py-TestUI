@@ -1,6 +1,7 @@
 import argparse
 import multiprocessing as mp
 import os
+import re
 import time
 import subprocess
 
@@ -84,40 +85,32 @@ def remove_logs():
     Will remove the logs from the previous execution.
     """
     log_dir = "./logs"
-    i = 0
+    for folder in ("report_screenshots", "appium_logs"):
+        __remove_files(os.path.join(log_dir, folder), folder)
+    __remove_files(log_dir, "logs")
+
+
+def __remove_files(folder, name):
+    """
+    Removes the files in the folder, keeping its subfolders
+    :param folder: path of the folder
+    :param name: folder name for the log message
+    """
     try:
-        for filename in os.listdir(os.path.join(log_dir, "report_screenshots")):
-            file_path = os.path.join(
-                os.path.join(log_dir, "report_screenshots"), filename
-            )
+        files = [
+            os.path.join(folder, filename)
+            for filename in os.listdir(folder)
+            if os.path.isfile(os.path.join(folder, filename))
+        ]
+    except (PermissionError, FileNotFoundError):
+        return
+    if files:
+        logger.log(f"Cleaning {name} folder...")
+    for file_path in files:
+        try:
             os.remove(file_path)
-            if i == 0:
-                logger.log("Cleaning report_screenshots folder...")
-                i += 1
-    except (IsADirectoryError, PermissionError, FileNotFoundError):
-        pass
-    i = 0
-    try:
-        for filename in os.listdir(os.path.join(log_dir, "appium_logs")):
-            file_path = os.path.join(log_dir, "appium_logs", filename)
-            os.remove(file_path)
-            if i == 0:
-                logger.log("Cleaning appium_logs folder...")
-                i += 1
-    except (IsADirectoryError, PermissionError, FileNotFoundError):
-        pass
-    i = 0
-    try:
-        for filename in os.listdir(log_dir):
-            file_path = os.path.join(log_dir, filename)
-            if os.path.isdir(file_path):
-                continue
-            os.remove(file_path)
-            if i == 0:
-                logger.log("Cleaning logs folder...")
-                i += 1
-    except (IsADirectoryError, PermissionError, FileNotFoundError):
-        pass
+        except (PermissionError, FileNotFoundError):
+            pass
 
 
 def get_total_number_of_cases(args):
@@ -363,9 +356,12 @@ def __start_run_id(args, test_run_name):
             process.terminate()
             process.wait()
             os.remove("testrail_id_file.txt")
-            created = text.partition("New testrun created")[2]
-            if "ID=" in created:
-                id_test = created.split("ID=")[1].split("\n")[0].strip()
+            # The run name can contain "ID=" too; the run ID ends the line
+            created = re.search(
+                r"New testrun created.*ID=(\d+)\s*$", text, re.MULTILINE
+            )
+            if created:
+                id_test = created.group(1)
                 logger.log_info(f"Test run: {id_test}")
                 return id_test
             raise Exception("Failed to create Test Run")

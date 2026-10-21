@@ -29,6 +29,8 @@ def test_process_writes_real_exit_codes(tmp_path, monkeypatch):
         "INFO  setup ID=1 seen first\n"
         "INFO     pytest_testrail.plugin:plugin.py:524 "
         'New testrun created with name "run" and ID=7\n',
+        # A run name that contains "ID=" itself
+        '[testrail] New testrun created with name "Build ID=5" and ID=7\n',
     ],
 )
 def test_start_run_id(output):
@@ -55,6 +57,8 @@ def test_remove_logs(tmp_path, monkeypatch):
         "logs/report_screenshots/b.png",
         "logs/x.txt",
         "logs/sub/keep.txt",
+        "logs/appium_logs/archive/keep.log",
+        "logs/report_screenshots/sub/keep.png",
     ]:
         (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / path).write_text("x")
@@ -62,7 +66,14 @@ def test_remove_logs(tmp_path, monkeypatch):
     left = sorted(
         str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file()
     )
-    assert left == [os.path.join("logs", "sub", "keep.txt")]
+    assert left == sorted(
+        os.path.join(*path.split("/"))
+        for path in [
+            "logs/appium_logs/archive/keep.log",
+            "logs/report_screenshots/sub/keep.png",
+            "logs/sub/keep.txt",
+        ]
+    )
 
 
 def test_leftover_result_files_are_removed(tmp_path, monkeypatch):

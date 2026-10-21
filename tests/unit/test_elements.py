@@ -103,6 +103,23 @@ def test_no_contains_attribute_negates():
     )
 
 
+@pytest.mark.parametrize(
+    "wait",
+    [
+        "wait_until_attribute",
+        "wait_until_contains_attribute",
+        "wait_until_contains_sensitive_attribute",
+    ],
+)
+def test_failed_no_wait_does_not_negate_the_next_check(wait):
+    d = FakeTestUIDriver([FakeWebElement({"text": "hello"})], soft_assert=True)
+    el = Elements(d, "id", "a")
+    getattr(el.no(), wait)("text", "hello", seconds=0.3)
+    assert len(d.errors) == 1
+    getattr(el, wait)("text", "hello", seconds=0.3)
+    assert len(d.errors) == 1
+
+
 def test_press_hold_pause_in_seconds():
     d = FakeTestUIDriver([FakeWebElement()])
     actions = mock.MagicMock()
